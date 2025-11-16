@@ -1,0 +1,27 @@
+replicaCount: 2
+
+image:
+  repository: aadan1lov/muffin-wallet
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8083
+  targetPort: 8080
+
+probes:
+  liveness:
+    path: /actuator/health/liveness
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  readiness:
+    path: /actuator/health/readiness
+    initialDelaySeconds: 2
+    periodSeconds: 5
+
+autoscaling:
+  enabled: false
+
+ingress:
+  enabled: false
