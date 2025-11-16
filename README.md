@@ -1,4 +1,7 @@
 ## Что я делал?
+У меня в Docker (ДЛЯ СЕБЯ): muffin-wallet-database-1 с первой домашки
+postgres/postgres/postgres
+
 ### Сгенерировал файлы
 ```shell
 helm create muffin-wallet

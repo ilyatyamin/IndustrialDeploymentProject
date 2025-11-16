@@ -7,17 +7,19 @@ image:
 
 service:
   type: ClusterIP
-  port: 8083
-  targetPort: 8080
+  port: 8081
+  targetPort: 8081
+
+containerPort: 8081
 
 probes:
   liveness:
     path: /actuator/health/liveness
-    initialDelaySeconds: 5
+    initialDelaySeconds: 10
     periodSeconds: 10
   readiness:
     path: /actuator/health/readiness
-    initialDelaySeconds: 2
+    initialDelaySeconds: 10
     periodSeconds: 5
 
 autoscaling:
@@ -33,3 +35,21 @@ ingress:
         - path: /
           pathType: Prefix
   tls: []
+
+env:
+  - name: SPRING_DATASOURCE_URL
+    value: "jdbc:postgresql://host.minikube.internal:5432/postgres"
+  - name: SPRING_DATASOURCE_USERNAME
+    value: "postgres"
+  - name: SPRING_DATASOURCE_PASSWORD
+    value: "postgres"
+  - name: SERVER_PORT
+    value: "8081"
+  - name: SPRING_PROFILES_ACTIVE
+    value: "default"
+  - name: SPRING_MAIN_LOGGING_LEVEL
+    value: "DEBUG"
+  - name: SPRING_BOOT_LOGGING_DEBUG
+    value: "true"
+  - name: CURRENCY_SERVICE_URL
+    value: "http://muffin-currency:8083/rate"
