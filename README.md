@@ -20,4 +20,5 @@ helm upgrade --install muffin-wallet ./muffin-wallet
 ### С helmfile
 ```shell
 helmfile apply
+helmfile destroy
 ```
