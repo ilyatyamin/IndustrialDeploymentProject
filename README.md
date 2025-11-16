@@ -16,3 +16,8 @@ helm install muffin-wallet ./muffin-wallet
 ```shell
 helm upgrade --install muffin-wallet ./muffin-wallet
 ```
+
+### С helmfile
+```shell
+helmfile apply
+```
