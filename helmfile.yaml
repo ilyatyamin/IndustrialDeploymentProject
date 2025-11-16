@@ -23,7 +23,7 @@ releases:
           - "-c"
           - |
             echo "Deployment status:"
-            kubectl get pods -n muffin -l app=muffin-wallet
+            kubectl get pods -l app=muffin-wallet
 
 helmDefaults:
   wait: true

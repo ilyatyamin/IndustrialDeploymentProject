@@ -22,3 +22,9 @@ helm upgrade --install muffin-wallet ./muffin-wallet
 helmfile apply
 helmfile destroy
 ```
+
+### не работал ingress с helmfile
+помогло:
+```shell
+kubectl delete ingress muffin-wallet -n default
+```
