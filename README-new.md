@@ -5,6 +5,7 @@
 minikube delete --all --purge 
 
 minikube start --driver=docker
+minikube addons enable ingress
 ```
 
 2. Поднял БД в Docker Базу Данных
@@ -16,6 +17,13 @@ docker-compose up -d
 ```yaml
 cd muffin-wallet
 helmfile apply
+```
+
+если надо убить helm release: helmfile destroy
+
+4. Поднял с помощью Helmfile muffin-currency
+```yaml
+cd muffin-currency
 ```
 
 если надо убить helm release: helmfile destroy
