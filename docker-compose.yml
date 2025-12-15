@@ -1,0 +1,18 @@
+services:
+  database:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    env_file:
+      - prod.env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - muffin-wallet-network
+
+networks:
+  muffin-wallet-network:
+    driver: bridge
+
+volumes:
+  db_data:

@@ -5,9 +5,9 @@ repositories:
 releases:
   - name: muffin-wallet
     namespace: default
-    chart: ./muffin-wallet
+    chart: .
     values:
-      - ./muffin-wallet/values.yaml
+      - values.yaml
     hooks:
       - events: ["presync"]
         showlogs: true
