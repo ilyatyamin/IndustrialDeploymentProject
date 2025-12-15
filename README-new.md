@@ -27,3 +27,19 @@ cd muffin-currency
 ```
 
 если надо убить helm release: helmfile destroy
+
+5. сделать туннель
+```shell
+minikube addons enable ingress
+kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
+sudo minikube tunnel
+```
+
+6. Устанавливаем istio, включаем автоматическую инжекцию sidecar-прокси
+```yaml
+brew install istioctl
+istioctl install --set profile=demo -y
+kubectl label namespace default istio-injection=enabled --overwrite
+kubectl rollout restart deployment -n default
+
+```

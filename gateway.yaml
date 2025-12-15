@@ -1,0 +1,32 @@
+# https://istio.io/latest/docs/reference/config/networking/gateway/
+
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: ilyatyamin-muffin-istio-gateway
+  namespace: default
+spec:
+  selector:
+    app: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - muffin-wallet.com
+        - muffin-currency.com
+      tls:
+        httpsRedirect: false # sends 301 redirect for http requests
+
+#    - port:
+#        number: 443
+#        name: https-443
+#        protocol: HTTPS
+#      hosts:
+#        - muffin-wallet.com
+#        - muffin-currency.com
+#      tls:
+#        mode: SIMPLE # enables HTTPS on this port
+#        serverCertificate: /etc/certs/servercert.pem
+#        privateKey: /etc/certs/privatekey.pem

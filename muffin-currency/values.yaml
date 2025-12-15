@@ -26,7 +26,7 @@ autoscaling:
   enabled: false
 
 ingress:
-  enabled: true
+  enabled: false
   className: nginx
   annotations: {}
   hosts:
