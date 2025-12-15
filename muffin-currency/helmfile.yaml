@@ -1,0 +1,33 @@
+repositories:
+  - name: stable
+    url: https://charts.helm.sh/stable
+
+releases:
+  - name: muffin-currency
+    namespace: default
+    chart: .
+    values:
+      - values.yaml
+    hooks:
+      - events: ["presync"]
+        showlogs: true
+        command: "/bin/sh"
+        args:
+          - "-c"
+          - |
+            echo "Presync Hook"
+      - events: ["postsync"]
+        showlogs: true
+        command: "/bin/sh"
+        args:
+          - "-c"
+          - |
+            echo "Deployment status:"
+            kubectl get pods -l app=muffin-currency
+
+helmDefaults:
+  wait: true
+  timeout: 300
+  recreatePods: false
+  force: false
+  atomic: true

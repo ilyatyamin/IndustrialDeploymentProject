@@ -1,0 +1,39 @@
+replicaCount: 2
+
+image:
+  repository: aadan1lov/muffin-currency
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8081
+  targetPort: 8081
+
+containerPort: 8081
+
+probes:
+  liveness:
+    path: /rate?from=PLAIN&to=CHOKOLATE
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readiness:
+    path: /rate?from=PLAIN&to=CHOKOLATE
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+autoscaling:
+  enabled: false
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: "muffin-currency.com"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+env:
