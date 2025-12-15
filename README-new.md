@@ -43,3 +43,19 @@ kubectl label namespace default istio-injection=enabled --overwrite
 kubectl rollout restart deployment -n default
 
 ```
+
+7. Сделал ямлик Istio Gateway (в корневой папке)
+```yaml
+kubectl apply -f gateway.yaml
+```
+
+8. Сделал ямлики VirtualService Wallet и Currency -- надо сделать apply
+```yaml
+cd muffin-wallet
+kubectl apply -f virtual-service-wallet.yaml
+
+cd ..
+
+cd muffin-currency
+kubectl apply -f virtual-service-currency.yaml
+```

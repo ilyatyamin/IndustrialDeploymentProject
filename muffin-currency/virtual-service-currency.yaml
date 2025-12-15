@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: muffin-currency
+  namespace: default
+spec:
+  hosts:
+    - muffin-currency.com
+  gateways:
+    - ilyatyamin-muffin-istio-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: muffin-currency
+            port:
+              number: 8080

@@ -52,4 +52,4 @@ env:
   - name: SPRING_BOOT_LOGGING_DEBUG
     value: "true"
   - name: CURRENCY_SERVICE_URL
-    value: "http://muffin-currency:8083/rate"
+    value: "http://muffin-currency:8081/rate"
