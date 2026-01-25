@@ -19,7 +19,7 @@ services:
       - "9090:9090"
     restart: unless-stopped
     extra_hosts:
-      - "muffin-wallet.com:host-gateway"
+      - "muffin-wallet.com:host-gateway" # Это нужно чтобы строка из /etc/hosts на локальном компе работала и с сетью Докера!
     volumes:
       - ./prometheus-config.yml:/etc/prometheus/prometheus.yml
     networks:
