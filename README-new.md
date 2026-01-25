@@ -1,4 +1,7 @@
 ## Что я делал?
+> P.S. Это шаблон с большого ДЗ-2. Поэтому тут много лишних файлов, также я не стал удалять часть с istio, ее можно просто пропустить
+
+> P.S.2. Я изначально пытался делать оператор в k8s, но у меня не сильно много чего получилось, поэтому я сделал Docker. Поэтому тут где-то есть остатки решения из Кубера.
 
 1. Поднять миникуб
 ```yaml
@@ -8,7 +11,9 @@ minikube start --driver=docker
 minikube addons enable ingress
 ```
 
-2. Поднял БД в Docker Базу Данных
+2. Поднял БД в Docker Базу Данных и Prometheus и Grafana. 
+Важно! В /etc/hosts должен быть резолв muffin-wallet.com. Я в Docker Compose подшаманил, чтобы под мог резолвить muffin-wallet.com/actuator/prometheus.
+
 ```yaml
 docker-compose up -d
 ```
@@ -28,14 +33,7 @@ cd muffin-currency
 
 если надо убить helm release: helmfile destroy
 
-5. сделать туннель
-```shell
-minikube addons enable ingress
-kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
-sudo minikube tunnel
-```
-
-6. Устанавливаем istio, включаем автоматическую инжекцию sidecar-прокси
+5. Устанавливаем istio, включаем автоматическую инжекцию sidecar-прокси
 ```yaml
 brew install istioctl
 
@@ -47,12 +45,12 @@ kubectl rollout restart deployment -n default
 
 ```
 
-7. Сделал ямлик Istio Gateway (в корневой папке)
+6. Сделал ямлик Istio Gateway (в корневой папке)
 ```yaml
-kubectl apply -f gateway.yaml
+kubectl apply -f gateway/gateway.yaml
 ```
 
-8. Сделал ямлики VirtualService Wallet и Currency -- надо сделать apply
+7. Сделал ямлики VirtualService Wallet и Currency -- надо сделать apply
 ```yaml
 cd muffin-wallet
 kubectl apply -f virtual-service-wallet.yaml
@@ -63,66 +61,17 @@ cd muffin-currency
 kubectl apply -f virtual-service-currency.yaml
 ```
 
+8. сделать туннель
+```shell
+minikube addons enable ingress
+kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
+sudo minikube tunnel
+```
+
 9. Маршрутизация готова:
 ```yaml
 muffin-wallet.com
 muffin-currency.com
 ```
 
-Когда создавать аккаунты, четко типы из кода Muffin currency!!! тогда будут работать транзакции
-
-10. Kiali
-```yaml
--- https://istio-cheatsheet.tetratelabs.io/istioctl
-
--- скачать istio
-curl -L https://istio.io/downloadIstio | sh -
-cd istio-1.28.1
-export PATH=$PWD/bin:$PATH
-
-kubectl apply -f samples/addons/prometheus.yaml
-kubectl apply -f samples/addons/kiali.yaml
-kubectl apply -f samples/addons/grafana.yaml
-kubectl apply -f samples/addons/jaeger.yaml
-
--- Дашборд
-istioctl dashboard kiali
-
--- Графану можно поставить так
-istioctl dashboard grafana
-
--- внутри сделал подключение к http://prometheus.istio-system:9090
--- это можно посмотреть в service mesh kiali (все адреса)
-
--- Ягер можно посмотреть вот так
-istioctl d jaeger
--- http://tracing.istio-system.svc.cluster.local
-
-```
-
-11. Трейсинг (дальше боль и страдания)
-```yaml
-kubectl apply -f tracing.yaml  -- Включил трейсинг в самом istio: tracing/tracing.yaml
-```
-
-Далее поправил в samples/addons/jaeger.yaml: там включил трейсинг и указал gRPC путь
-https://kiali.io/docs/configuration/p8s-jaeger-grafana/tracing/jaeger/
-```yaml
-enabled: true
-internal_url: "http://tracing.istio-system:16685/jaeger"
-use_grpc: true
-# Public facing URL of Jaeger
-external_url: "http://jaeger.muffin-wallet.com"
-```
-
-Обновил:
-```yaml
- kubectl apply -f samples/addons/kiali.yaml
- kubectl rollout restart deploy kiali -n istio-system
-```
-
-## Авторизация
-12. Создадим Service Account для muffin-wallet. Нужно для похода в muffin-currency
-```yaml
-kubectl apply -f security/muffin-wallet-account.yaml
-```
+10. Настроим в графане подключение к прометеусу

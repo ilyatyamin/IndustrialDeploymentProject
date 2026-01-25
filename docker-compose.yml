@@ -10,6 +10,30 @@ services:
     networks:
       - muffin-wallet-network
 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    extra_hosts:
+      - "muffin-wallet.com:host-gateway"
+    volumes:
+      - ./prometheus-config.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - muffin-wallet-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - muffin-wallet-network
+
 networks:
   muffin-wallet-network:
     driver: bridge

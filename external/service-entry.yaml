@@ -1,0 +1,31 @@
+# https://istio.io/latest/docs/reference/config/networking/service-entry/
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: external-postgres
+  namespace: default
+spec:
+  hosts:
+    - host.minikube.internal
+  ports:
+    - number: 5432
+      name: pg
+      protocol: TCP
+  location: MESH_EXTERNAL
+  resolution: DNS
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: internal-muffin-currency
+  namespace: default
+spec:
+  hosts:
+    - "muffin-currency.default.svc.cluster.local"
+  ports:
+    - number: 8080
+      name: http
+      protocol: HTTP
+  location: MESH_INTERNAL
+  resolution: DNS

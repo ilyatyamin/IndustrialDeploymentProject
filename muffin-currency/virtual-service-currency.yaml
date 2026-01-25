@@ -17,3 +17,8 @@ spec:
             host: muffin-currency
             port:
               number: 8080
+      retries: # https://habr.com/ru/companies/domclick/articles/521458/
+        attempts: 3
+        perTryTimeout: 1s
+        retryOn: 5xx
+      timeout: 3s

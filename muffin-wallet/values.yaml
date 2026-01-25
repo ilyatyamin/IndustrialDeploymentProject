@@ -53,3 +53,8 @@ env:
     value: "true"
   - name: CURRENCY_SERVICE_URL
     value: "http://muffin-currency:8080/rate"
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/path: "/actuator/prometheus"
+  prometheus.io/port: "8081"

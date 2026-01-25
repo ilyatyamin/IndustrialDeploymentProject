@@ -1,0 +1,13 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: muffin-currency-resilience
+  namespace: default
+spec:
+  host: muffin-currency.default.svc.cluster.local
+  trafficPolicy:
+    outlierDetection: # https://habr.com/ru/companies/domclick/articles/521458/
+      consecutive5xxErrors: 5
+      interval: 5s
+    tls:
+      mode: ISTIO_MUTUAL
