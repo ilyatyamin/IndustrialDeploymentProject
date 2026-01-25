@@ -53,11 +53,10 @@ env:
     value: "true"
   - name: CURRENCY_SERVICE_URL
     value: "http://muffin-currency:8080/rate"
-  # === МЕТРИКИ ===
   - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
-    value: "health,info,prometheus,metrics"  # ← ЭТУ ДОБАВЬТЕ
+    value: "health,info,prometheus,metrics"
   - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
-    value: "true"  # ← И ЭТУ ДОБАВЬТЕ
+    value: "true"
   - name: MANAGEMENT_METRICS_DISTRIBUTION_PERCENTILES-HISTOGRAM_HTTP_SERVER_REQUESTS
     value: "true"
   - name: MANAGEMENT_METRICS_DISTRIBUTION_SLA_HTTP_SERVER_REQUESTS
