@@ -75,3 +75,56 @@ muffin-currency.com
 ```
 
 10. Настроим в графане подключение к прометеусу
+![](images/1.png)
+
+Тут "Add new data source", дальше выбираем тип источника "Prometheus" и по URL "http://prometheus:9090" подсоединяемся к прометеусу (графана и пром в одной сети)
+
+## Как проверить работоспособность всех компонентов системы.
+Для подов в k8s должен проходить хэлсчек. Посмотреть это можно через UI k8s или через команду:
+```yaml
+kubectl get pods -o wide
+```
+
+Для докера также нужно посмотреть хэлсчек:
+```yaml
+docker ps
+```
+
+## Запросы
+Я сделал дашборд в Графана, [отгрузил его json-ину сюда](dashboard.json), но дублирую запросы тут.
+
+Также эти метрики можно забить просто в UI Графаны (раздел Explore) или в [UI Prometheus](http://localhost:9090/query)
+
+### Количество запросов в секунду по каждому методу REST API вашего приложения.
+```promql
+sum by (uri, method) (
+  rate(http_server_requests_seconds_count{job="muffin-wallet", uri=~"/v1/muffin-wallet.*"}[1m])
+)
+```
+
+### Количество ошибок в логах приложения.
+```promql
+sum(rate(logback_events_total{level=~"warn|error",}[1m]))
+```
+
+Здесь сделал через частоту в секунду
+
+## 99-й персентиль времени ответа HTTP (обработка запросов).
+```promql
+histogram_quantile(0.95, 
+  sum by(le, uri) (
+    rate(http_server_requests_seconds_bucket[5m])
+  )
+)
+```
+
+## Количество активных соединений к базе данных PostgreSQL.
+```promql
+sum_over_time(hikaricp_connections_active{instance="muffin-wallet.com"}[1m])
+```
+
+## Итог
+![](images/2.png)
+
+## Как посмотреть правильность?
+Можно дать нагрузки на сервис и посмотреть на корректность метрик. Я написал [скрипт на питоне](load.py), можно его запустить и посмотреть на корректность. С ростом RPS (количество тредов в пуле), должны расти и графики :)

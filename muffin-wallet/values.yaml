@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 1
 
 image:
   repository: aadan1lov/muffin-wallet
@@ -53,6 +53,17 @@ env:
     value: "true"
   - name: CURRENCY_SERVICE_URL
     value: "http://muffin-currency:8080/rate"
+  # === МЕТРИКИ ===
+  - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+    value: "health,info,prometheus,metrics"  # ← ЭТУ ДОБАВЬТЕ
+  - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+    value: "true"  # ← И ЭТУ ДОБАВЬТЕ
+  - name: MANAGEMENT_METRICS_DISTRIBUTION_PERCENTILES-HISTOGRAM_HTTP_SERVER_REQUESTS
+    value: "true"
+  - name: MANAGEMENT_METRICS_DISTRIBUTION_SLA_HTTP_SERVER_REQUESTS
+    value: "100ms,200ms,500ms,1s,2s"
+  - name: MANAGEMENT_METRICS_TAGS_APPLICATION
+    value: "muffin-wallet"
 
 podAnnotations:
   prometheus.io/scrape: "true"
