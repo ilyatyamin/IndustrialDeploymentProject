@@ -1,0 +1,7 @@
+zipkin:
+  storage:
+    type: mem
+
+service:
+  type: NodePort
+  port: 9411

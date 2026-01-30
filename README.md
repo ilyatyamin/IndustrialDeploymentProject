@@ -1,7 +1,7 @@
+# Илья Тямин
 ## Что я делал?
-> P.S. Это шаблон с большого ДЗ-2. Поэтому тут много лишних файлов, также я не стал удалять часть с istio, ее можно просто пропустить
 
-> P.S.2. Я изначально пытался делать оператор в k8s, но у меня не сильно много чего получилось, поэтому я сделал Docker. Поэтому тут где-то есть остатки решения из Кубера.
+> P.S. Это шаблон с большого ДЗ-2 и ДЗ-1 с второго семестра. Поэтому тут много лишних файлов, также я не стал удалять часть с istio, ее можно просто пропустить
 
 1. Поднять миникуб
 ```yaml
@@ -11,11 +11,42 @@ minikube start --driver=docker
 minikube addons enable ingress
 ```
 
-2. Поднял БД в Docker Базу Данных и Prometheus и Grafana. 
-Важно! В /etc/hosts должен быть резолв muffin-wallet.com. Я в Docker Compose подшаманил, чтобы под мог резолвить muffin-wallet.com/actuator/prometheus.
+2. Поднял БД в Docker Базу Данных (и по совместительству Prometheus).
+Важно! В /etc/hosts должен быть резолв muffin-wallet.com.
 
 ```yaml
 docker-compose up -d
+```
+
+3. Для того чтобы правильно работал трейсинг, нам нужно пересобрать muffin-currency и запушить в свой локальный Docker Hub. 
+
+(в самом muffin-currency вместо URL трейсинга стоит http://localhost:8080). Заменяем строку на
+```gotemplate
+err := initTracing("currency-service", "http://zipkin.wallet-monitoring.svc.cluster.local:9411/api/v2/spans")
+```
+
+Почему такой адрес -- станет ясно позже (я разверну Zipkin в неймспейсе wallet-monitoring).
+
+Как собрать и запушить все в Docker Hub:
+```shell
+docker build -t muffin-currency:1.1.1 .
+
+docker login
+
+docker tag muffin-currency:1.1.1 tyaminilya/muffin-currency:1.1.1
+
+docker push tyaminilya/muffin-currency:1.1.1
+```
+
+Аналогично, мне требовалось пересобрать muffin-wallet (но потом оказалось, что это не надо, так как путь до Zipkin можно указать как переменная окружения)
+```shell
+docker build -t muffin-wallet:1.1.1 .
+
+docker login
+
+docker tag muffin-wallet:1.1.1 tyaminilya/muffin-wallet:1.1.1
+
+docker push tyaminilya/muffin-wallet:1.1.1
 ```
 
 3. Поднял с помощью Helmfile muffin-wallet
@@ -24,11 +55,25 @@ cd muffin-wallet
 helmfile apply
 ```
 
+ПЕРЕД ЭТИМ (!!!!!) я добавил в muffin-wallet/values.yaml в раздел env
+```yaml
+  - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+    value: "http://zipkin.wallet-monitoring.svc.cluster.local:9411/api/v2/spans"
+  - name: MANAGEMENT_ZIPKIN_TRACING_CONNECT_TIMEOUT
+    value: 5s
+  - name: MANAGEMENT_ZIPKIN_TRACING_READ_TIMEOUT
+    value: 5s
+  - name: MANAGEMENT_ZIPKIN_TRACING_MESSAGE_TIMEOUT
+    value: 5s
+```
+Это нужно для корректной работы трейсинга (его настраивать будем позже)
+
 если надо убить helm release: helmfile destroy
 
 4. Поднял с помощью Helmfile muffin-currency
 ```yaml
 cd muffin-currency
+helmfile apply
 ```
 
 если надо убить helm release: helmfile destroy
@@ -52,13 +97,8 @@ kubectl apply -f gateway/gateway.yaml
 
 7. Сделал ямлики VirtualService Wallet и Currency -- надо сделать apply
 ```yaml
-cd muffin-wallet
-kubectl apply -f virtual-service-wallet.yaml
-
-cd ..
-
-cd muffin-currency
-kubectl apply -f virtual-service-currency.yaml
+kubectl apply -f muffin-wallet/virtual-service-wallet.yaml
+kubectl apply -f muffin-currency/virtual-service-currency.yaml
 ```
 
 8. сделать туннель
@@ -74,57 +114,73 @@ muffin-wallet.com
 muffin-currency.com
 ```
 
-10. Настроим в графане подключение к прометеусу
+10. Поставим Grafana Stack в k8s
+```yaml
+helm repo add grafana https://grafana.github.io/helm-charts
+
+helm install loki grafana/loki-stack \
+--namespace wallet-monitoring \
+--create-namespace \
+--set promtail.enabled=true \
+--set grafana.enabled=true \
+--set grafana.adminPassword=admin123 \
+--set grafana.service.type=NodePort \
+--set loki.persistence.enabled=false
+
+helm upgrade --install loki grafana/loki-stack \
+--namespace wallet-monitoring \
+--create-namespace \
+--set promtail.enabled=true \
+--set grafana.enabled=true \
+--set grafana.adminPassword=admin123 \
+--set grafana.service.type=NodePort \
+--set loki.persistence.enabled=false \
+--set 'promtail.config.clients[0].url=http://loki.wallet-monitoring.svc.cluster.local:3100/loki/api/v1/push'
+```
+Тут 2 команды у меня специально, чтобы promtail смог найти норм путь до loki и зарезолвить его.
+
+Поднялась графана. Есть 2 пути как отобразить ее UI (легкий и простой):
+
+Легкий -- сделать port-forward:
+```shell
+kubectl port-forward deployment/loki-grafana 3000 3000 -n wallet-monitoring
+```
+
+Сложный -- сделать Ingress:
+```shell
+cd monitoring
+kubectl apply -f grafana-ingress.yaml 
+minikube tunnel
+```
+В /etc/hosts надо будет добавить `192.168.49.2 grafana.local`
+
+Вот она, графана (пароль admin123):
 ![](images/1.png)
 
-Тут "Add new data source", дальше выбираем тип источника "Prometheus" и по URL "http://prometheus:9090" подсоединяемся к прометеусу (графана и пром в одной сети)
+Loki будет автоматически подключен к Grafana. Также Loki будет автоматически скрэппить логи со всех подов k8s.
 
-## Как проверить работоспособность всех компонентов системы.
-Для подов в k8s должен проходить хэлсчек. Посмотреть это можно через UI k8s или через команду:
-```yaml
-kubectl get pods -o wide
+Это можно посмотреть в разделе Explore:
+
+![](images/3.png)
+
+11. Поднимем zipkin в том же неймспейсе:
+```shell
+helm repo add zipkin https://zipkin.io/zipkin-helm
+helm install zipkin zipkin/zipkin --namespace wallet-monitoring
 ```
 
-Для докера также нужно посмотреть хэлсчек:
-```yaml
-docker ps
+Сделаем port-forward на порт 9411:
+```shell
+kubectl port-forward deployment/zipkin 9411 9411 -n wallet-monitoring
 ```
 
-## Запросы
-Я сделал дашборд в Графана, [отгрузил его json-ину сюда](dashboard.json), но дублирую запросы тут.
-
-Также эти метрики можно забить просто в UI Графаны (раздел Explore) или в [UI Prometheus](http://localhost:9090/query)
-
-### Количество запросов в секунду по каждому методу REST API вашего приложения.
-```promql
-sum by (uri, method) (
-  rate(http_server_requests_seconds_count{job="muffin-wallet", uri=~"/v1/muffin-wallet.*"}[1m])
-)
-```
-
-### Количество ошибок в логах приложения.
-```promql
-sum(rate(logback_events_total{level=~"warn|error",}[1m]))
-```
-
-Здесь сделал через частоту в секунду
-
-## 99-й персентиль времени ответа HTTP (обработка запросов).
-```promql
-histogram_quantile(0.95, 
-  sum by(le, uri) (
-    rate(http_server_requests_seconds_bucket[5m])
-  )
-)
-```
-
-## Количество активных соединений к базе данных PostgreSQL.
-```promql
-sum_over_time(hikaricp_connections_active{instance="muffin-wallet.com"}[1m])
-```
-
-## Итог
+12. Сделаем пару запросов на `muffin-wallet`, чтобы запросы доходили до `muffin-currency` (перевод денег). Посмотрим трейс в UI Zipkin:
 ![](images/2.png)
 
-## Как посмотреть правильность?
-Можно дать нагрузки на сервис и посмотреть на корректность метрик. Я написал [скрипт на питоне](load.py), можно его запустить и посмотреть на корректность. С ростом RPS (количество тредов в пуле), должны расти и графики :)
+Ура! Все работает!
+
+13. Сделаем дашборд в Grafana. Не буду подробно объяснять как я его делал (использовал Variables в дашборде и инжектил их через $NameOfVariable)
+
+Дополнительно я прикрепил [JSON дашборда](dashboard.json) в корень репозитория. В дашборде можно выбрать по кнопке уровень логов и логи обоих контейнеров отфильтруются по уровню, а также указать traceId и справа отобразится информация о трейсе.
+
+![](images/4.png)

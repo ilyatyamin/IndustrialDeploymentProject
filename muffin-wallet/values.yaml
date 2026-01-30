@@ -1,9 +1,9 @@
 replicaCount: 1
 
 image:
-  repository: aadan1lov/muffin-wallet
-  tag: "1.1.0"
-  pullPolicy: IfNotPresent
+  repository: tyaminilya/muffin-wallet
+  tag: "1.1.1"
+  pullPolicy: Always
 
 service:
   type: ClusterIP
@@ -63,6 +63,14 @@ env:
     value: "100ms,200ms,500ms,1s,2s"
   - name: MANAGEMENT_METRICS_TAGS_APPLICATION
     value: "muffin-wallet"
+  - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+    value: "http://zipkin.wallet-monitoring.svc.cluster.local:9411/api/v2/spans"
+  - name: MANAGEMENT_ZIPKIN_TRACING_CONNECT_TIMEOUT
+    value: 5s
+  - name: MANAGEMENT_ZIPKIN_TRACING_READ_TIMEOUT
+    value: 5s
+  - name: MANAGEMENT_ZIPKIN_TRACING_MESSAGE_TIMEOUT
+    value: 5s
 
 podAnnotations:
   prometheus.io/scrape: "true"

@@ -25,15 +25,6 @@ services:
     networks:
       - muffin-wallet-network
 
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    networks:
-      - muffin-wallet-network
-
 networks:
   muffin-wallet-network:
     driver: bridge

@@ -1,0 +1,12 @@
+repositories:
+  - name: openzipkin
+    url: https://openzipkin.github.io/zipkin
+
+releases:
+  - name: zipkin
+    namespace: tracing
+    createNamespace: true
+    chart: openzipkin/zipkin
+    version: 0.4.0
+    values:
+      - values.yaml
