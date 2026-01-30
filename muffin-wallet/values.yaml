@@ -71,6 +71,8 @@ env:
     value: 5s
   - name: MANAGEMENT_ZIPKIN_TRACING_MESSAGE_TIMEOUT
     value: 5s
+  - name: MANAGEMENT_TRACING_PROPAGATION_TYPE
+    value: B3
 
 podAnnotations:
   prometheus.io/scrape: "true"

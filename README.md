@@ -25,6 +25,8 @@ docker-compose up -d
 err := initTracing("currency-service", "http://zipkin.wallet-monitoring.svc.cluster.local:9411/api/v2/spans")
 ```
 
+Также там в коде на Go была какая-то проблема с трейсингом (все время создавались новые спаны). Я поправил и запушил в свой Docker Hub: `tyaminilya/muffin-currency:1.2.0`
+
 Почему такой адрес -- станет ясно позже (я разверну Zipkin в неймспейсе wallet-monitoring).
 
 Как собрать и запушить все в Docker Hub:
@@ -175,15 +177,15 @@ kubectl port-forward deployment/zipkin 9411 9411 -n wallet-monitoring
 ```
 
 12. Сделаем пару запросов на `muffin-wallet`, чтобы запросы доходили до `muffin-currency` (перевод денег). Посмотрим трейс в UI Zipkin:
-![](images/2.png)
+![](images/6.png)
 
 Ура! Все работает!
 
 Также запросам muffin-currency приписываются `trace_id` и `span_id`:
-![](images/5.png)
+![](images/7.png)
 
 13. Сделаем дашборд в Grafana. Не буду подробно объяснять как я его делал (использовал Variables в дашборде и инжектил их через $NameOfVariable)
 
 Дополнительно я прикрепил [JSON дашборда](dashboard.json) в корень репозитория. В дашборде можно выбрать по кнопке уровень логов и логи обоих контейнеров отфильтруются по уровню, а также указать traceId и справа отобразится информация о трейсе.
 
-![](images/4.png)
+![](images/8.png)
