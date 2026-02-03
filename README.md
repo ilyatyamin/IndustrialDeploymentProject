@@ -210,3 +210,6 @@ kubectl port-forward deployment/zipkin 9411 9411 -n wallet-monitoring
 ```promql
 $TraceId
 ```
+
+Еще раз доказательство, что получилось сделать через лейблы :)
+![](images/10.png)
