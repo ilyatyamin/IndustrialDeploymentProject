@@ -1,0 +1,60 @@
+grafana:
+  enabled: true
+  adminPassword: admin123
+  service:
+    type: NodePort
+
+loki:
+  persistence:
+    enabled: false
+
+promtail:
+  enabled: true
+  config:
+    clients:
+      - url: http://loki.wallet-monitoring.svc.cluster.local:3100/loki/api/v1/push
+
+    snippets:
+      pipelineStages:
+        - match:
+            selector: '{app="muffin-wallet"}'
+            stages:
+              - json:
+                  expressions:
+                    log: log
+
+              - regex:
+                  source: log
+                  expression: '^\S+\s+(?P<logLevel>INFO|WARN|ERROR|DEBUG|TRACE)'
+
+              - regex:
+                  source: log
+                  expression: '\[(?P<traceId>[a-f0-9]+)-(?P<spanId>[a-f0-9]+)\]'
+
+              - labels:
+                  logLevel:
+                  traceId:
+                  spanId:
+
+        - match:
+            selector: '{app="muffin-currency"}'
+            stages:
+              - json:
+                  expressions:
+                    log: log
+
+              - json:
+                  source: log
+                  expressions:
+                    logLevel: level
+                    traceId: trace_id
+                    method: method
+                    path: path
+                    status: status
+
+              - labels:
+                  logLevel:
+                  traceId:
+                  method:
+                  path:
+                  status:

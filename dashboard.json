@@ -51,7 +51,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "code",
-          "expr": "{app=\"muffin-wallet\", container=\"muffin-wallet\"} |~ \"$LogLevel\"",
+          "expr": "{app=\"muffin-wallet\", container=\"muffin-wallet\", logLevel=~\"$LogLevel\", traceId=~\"$TraceId\"}",
           "queryType": "range",
           "refId": "A"
         }
@@ -62,7 +62,7 @@
     {
       "datasource": {
         "type": "zipkin",
-        "uid": "d0325dce-4c7f-4855-a9ea-e484eb1f3fd2"
+        "uid": "c2353300-8744-44b3-997d-a2d2ef918fd4"
       },
       "gridPos": {
         "h": 17,
@@ -71,12 +71,11 @@
         "y": 0
       },
       "id": 3,
-      "pluginVersion": "10.3.3",
       "targets": [
         {
           "datasource": {
             "type": "zipkin",
-            "uid": "d0325dce-4c7f-4855-a9ea-e484eb1f3fd2"
+            "uid": "c2353300-8744-44b3-997d-a2d2ef918fd4"
           },
           "query": "$TraceId",
           "queryType": "traceID",
@@ -115,7 +114,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "code",
-          "expr": "{app=\"muffin-currency\", container=\"muffin-currency\"} |~ \"$LogLevel\"",
+          "expr": "{app=\"muffin-currency\", container=\"muffin-currency\", logLevel=~\"$LogLevel\", traceId=~\"$TraceId\"}",
           "queryType": "range",
           "refId": "A"
         }
@@ -131,7 +130,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": [
             "INFO",
             "ERROR"
@@ -175,26 +174,28 @@
       {
         "current": {
           "selected": false,
-          "text": "697ceba292eb899c540039f5f07e6bf8",
-          "value": "697ceba292eb899c540039f5f07e6bf8"
+          "text": "69820b236c066e4801773b6c7f31488a",
+          "value": "69820b236c066e4801773b6c7f31488a"
         },
+        "description": "если хотите отобразить все логи - поставьте .*",
         "hide": 0,
+        "label": "Trace ID",
         "name": "TraceId",
         "options": [
           {
             "selected": true,
-            "text": "697ceba292eb899c540039f5f07e6bf8",
-            "value": "697ceba292eb899c540039f5f07e6bf8"
+            "text": "69820b236c066e4801773b6c7f31488a",
+            "value": "69820b236c066e4801773b6c7f31488a"
           }
         ],
-        "query": "697ceba292eb899c540039f5f07e6bf8",
+        "query": "69820b236c066e4801773b6c7f31488a",
         "skipUrlSync": false,
         "type": "textbox"
       }
     ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},

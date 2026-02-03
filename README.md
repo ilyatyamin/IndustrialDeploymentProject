@@ -129,17 +129,15 @@ helm install loki grafana/loki-stack \
 --set grafana.service.type=NodePort \
 --set loki.persistence.enabled=false
 
+# находясь в корне проекта
+
 helm upgrade --install loki grafana/loki-stack \
---namespace wallet-monitoring \
---create-namespace \
---set promtail.enabled=true \
---set grafana.enabled=true \
---set grafana.adminPassword=admin123 \
---set grafana.service.type=NodePort \
---set loki.persistence.enabled=false \
---set 'promtail.config.clients[0].url=http://loki.wallet-monitoring.svc.cluster.local:3100/loki/api/v1/push'
+-n wallet-monitoring \
+-f promtail/values.yaml
 ```
-Тут 2 команды у меня специально, чтобы promtail смог найти норм путь до loki и зарезолвить его.
+Тут 2 команды у меня специально, чтобы promtail смог найти норм путь до loki и зарезолвить его. 
+
+А также там добавлен парсинг traceId, spanId и logLevel как лейблов в логах.
 
 Поднялась графана. Есть 2 пути как отобразить ее UI (легкий и простой):
 
@@ -176,16 +174,39 @@ helm install zipkin zipkin/zipkin --namespace wallet-monitoring
 kubectl port-forward deployment/zipkin 9411 9411 -n wallet-monitoring
 ```
 
+В Grafana добавим Data Source (Zipkin) с URL = http://zipkin.wallet-monitoring.svc.cluster.local:9411
+
 12. Сделаем пару запросов на `muffin-wallet`, чтобы запросы доходили до `muffin-currency` (перевод денег). Посмотрим трейс в UI Zipkin:
 ![](images/6.png)
 
 Ура! Все работает!
 
-Также запросам muffin-currency приписываются `trace_id` и `span_id`:
+Также запросам muffin-currency приписываются `trace_id` и `span_id`, а для muffin-wallet их скрэппит promtail по шаблону и добавляет как лэйблы к логу:
 ![](images/7.png)
 
 13. Сделаем дашборд в Grafana. Не буду подробно объяснять как я его делал (использовал Variables в дашборде и инжектил их через $NameOfVariable)
 
-Дополнительно я прикрепил [JSON дашборда](dashboard.json) в корень репозитория. В дашборде можно выбрать по кнопке уровень логов и логи обоих контейнеров отфильтруются по уровню, а также указать traceId и справа отобразится информация о трейсе.
+Дополнительно я прикрепил [JSON дашборда](dashboard.json) в корень репозитория. В дашборде можно выбрать по кнопке уровень логов и логи обоих контейнеров отфильтруются по уровню, а также указать traceId и справа отобразится информация о трейсе (и логи отфильтруются по трейсу).
 
-![](images/8.png)
+![](images/9.png)
+
+> Какой запрос для логов muffin-wallet?
+
+Из DataSource Loki:
+```promql
+{app="muffin-wallet", container="muffin-wallet", logLevel=~"$LogLevel", traceId=~"$TraceId"}
+```
+
+> Какой запрос для логов muffin-currency?
+
+Из DataSource Loki:
+```promql
+{app="muffin-currency", container="muffin-currency", logLevel=~"$LogLevel", traceId=~"$TraceId"}
+```
+
+> Какой запрос для окна с трейсом
+
+Из DataSource Zipkin:
+```promql
+$TraceId
+```
