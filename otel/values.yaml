@@ -23,14 +23,20 @@ config:
     prometheus:
       config:
         scrape_configs:
-          - job_name: opentelemetry-collector
+          # Collector internal metrics
+          - job_name: "otel-collector"
             scrape_interval: 10s
             static_configs:
-              - targets:
-                  - "0.0.0.0:8888"
+              - targets: ["0.0.0.0:8888"]
+          # Spring Boot metrics
+          - job_name: "muffin-wallet"
+            scrape_interval: 5s
+            metrics_path: "/actuator/prometheus"
+            static_configs:
+              - targets: ["muffin-wallet.default.svc.cluster.local:8081"]
 
   processors:
-    batch: { }
+    batch: {}
     memory_limiter:
       check_interval: 5s
       limit_percentage: 80
@@ -39,13 +45,14 @@ config:
   exporters:
     zipkin:
       endpoint: "http://zipkin.wallet-monitoring.svc.cluster.local:9411/api/v2/spans"
-    # https://grafana.com/docs/loki/latest/send-data/otel/
     otlphttp:
       endpoint: "http://loki.wallet-monitoring.svc.cluster.local:3100/otlp"
-    debug: { }
+    prometheus:
+      endpoint: "0.0.0.0:8889"   # Collector отдаёт метрики для Prometheus scrape
+    debug: {}
 
   extensions:
-    health_check: { }
+    health_check: {}
 
   service:
     extensions:
@@ -60,7 +67,7 @@ config:
       metrics:
         receivers: [otlp, prometheus]
         processors: [memory_limiter, batch]
-        exporters: [debug]
+        exporters: [prometheus, debug]
 
       traces:
         receivers: [otlp, jaeger]
@@ -69,4 +76,4 @@ config:
 
     telemetry:
       metrics:
-        address: "0.0.0.0:8888"
+        address: "0.0.0.0:8888"  # debug метрики Collector, можно использовать для проверки

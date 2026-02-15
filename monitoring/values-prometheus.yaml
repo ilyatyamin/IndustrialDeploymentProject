@@ -1,0 +1,19 @@
+# Source - https://stackoverflow.com/a/68543848
+# Posted by eikooc, modified by community. See post 'Timeline' for change history
+# Retrieved 2026-02-15, License - CC BY-SA 4.0
+
+prometheus:
+  enabled: true
+  prometheusSpec:
+    additionalScrapeConfigs: |
+      - job_name: 'otel-collector'
+        scrape_interval: 10s
+        static_configs:
+          - targets:
+              - 'opentelemetry-collector.wallet-monitoring.svc.cluster.local:8889'
+  additionalScrapeConfigs: |
+    - job_name: 'otel-collector'
+      scrape_interval: 10s
+      static_configs:
+        - targets:
+            - 'opentelemetry-collector.wallet-monitoring.svc.cluster.local:8889'

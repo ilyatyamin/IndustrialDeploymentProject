@@ -20,6 +20,7 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "muffin-wallet.com:host-gateway" # Это нужно чтобы строка из /etc/hosts на локальном компе работала и с сетью Докера!
+      - "opentelemetry-collector.com:host-gateway" # Это нужно чтобы строка из /etc/hosts на локальном компе работала и с сетью Докера!
     volumes:
       - ./prometheus-config.yml:/etc/prometheus/prometheus.yml
     networks:

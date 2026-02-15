@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: tyaminilya/muffin-currency
-  tag: "2.0.4"
+  tag: "2.0.0"
   pullPolicy: Always
 
 service:

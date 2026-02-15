@@ -8,3 +8,8 @@ scrape_configs:
     scheme: http
     static_configs:
       - targets: [ 'muffin-wallet.com' ]
+  - job_name: "otel-collector"
+    metrics_path: ""
+    scheme: http
+    static_configs:
+      - targets: ['opentelemetry-collector.com']

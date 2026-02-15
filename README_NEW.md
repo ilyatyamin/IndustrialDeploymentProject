@@ -184,4 +184,14 @@ helm install opentelemetry-collector open-telemetry/opentelemetry-collector \
 helm upgrade opentelemetry-collector open-telemetry/opentelemetry-collector \
   -n wallet-monitoring \
   -f otel/values.yaml
+  
+ 
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm upgrade --install prometheus prometheus-community/prometheus \
+  --namespace wallet-monitoring \
+  -f monitoring/values-prometheus.yaml
+
+
+kubectl port-forward deployment/prometheus-server 9090 9090 -n wallet-monitoring
 ```

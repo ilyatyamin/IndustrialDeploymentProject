@@ -16,6 +16,7 @@ spec:
       hosts:
         - muffin-wallet.com
         - muffin-currency.com
+        - opentelemetry-collector.com
       tls:
         httpsRedirect: false # sends 301 redirect for http requests
 

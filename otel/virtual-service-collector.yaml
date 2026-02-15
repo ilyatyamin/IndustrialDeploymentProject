@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: muffin-wallet
+  namespace: default
+spec:
+  hosts:
+    - opentelemetry-collector.com
+  gateways:
+    - ilyatyamin-muffin-istio-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: opentelemetry-collector
+            port:
+              number: 8889
+      retries: # https://habr.com/ru/companies/domclick/articles/521458/
+        attempts: 3
+        perTryTimeout: 1s
+        retryOn: 5xx
+      timeout: 3s
