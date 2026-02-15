@@ -1,0 +1,15 @@
+replicaCount: 1
+
+image:
+  repository: grafana/grafana
+  tag: 10.1.0
+  pullPolicy: IfNotPresent
+
+adminPassword: admin123
+
+service:
+  type: NodePort
+  port: 3000
+
+persistence:
+  enabled: false

@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: tyaminilya/muffin-wallet
-  tag: "2.0.1"
+  tag: "2.0.2"
   pullPolicy: Always
 
 service:
@@ -60,7 +60,7 @@ env:
   - name: MANAGEMENT_METRICS_DISTRIBUTION_PERCENTILES-HISTOGRAM_HTTP_SERVER_REQUESTS
     value: "true"
   - name: MANAGEMENT_METRICS_DISTRIBUTION_SLA_HTTP_SERVER_REQUESTS
-    value: "100ms,200ms,500ms,1s,2s"
+    value: "100ms,200ms,500ms,1s"
   - name: MANAGEMENT_METRICS_TAGS_APPLICATION
     value: "muffin-wallet"
   - name: MANAGEMENT_ZIPKIN_TRACING_CONNECT_TIMEOUT
@@ -79,6 +79,10 @@ env:
     value: "service.name=muffin-wallet"
   - name: JAVA_TOOL_OPTIONS
     value: "-javaagent:/otel-javaagent/opentelemetry-javaagent.jar"
+  - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+    value: "http://opentelemetry-collector.wallet-monitoring.svc.cluster.local:4318/v1/logs"
+  - name: OTEL_EXPORTER_OTLP_PROTOCOL
+    value: "http/protobuf"
 
 podAnnotations:
   prometheus.io/scrape: "true"

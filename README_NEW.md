@@ -31,24 +31,24 @@ err := initTracing("currency-service", "http://zipkin.wallet-monitoring.svc.clus
 
 Как собрать и запушить все в Docker Hub:
 ```shell
-docker build -t muffin-currency:2.0.0 .
+docker build -t muffin-currency:2.0.2 .
 
 docker login
 
-docker tag muffin-currency:2.0.0 tyaminilya/muffin-currency:2.0.0
+docker tag muffin-currency:2.0.2 tyaminilya/muffin-currency:2.0.2
 
-docker push tyaminilya/muffin-currency:2.0.0
+docker push tyaminilya/muffin-currency:2.0.2
 ```
 
 Аналогично, мне требовалось пересобрать muffin-wallet (но потом оказалось, что это не надо, так как путь до Zipkin можно указать как переменная окружения)
 ```shell
-docker build -t muffin-wallet:2.0.1 .
+docker build -t muffin-wallet:2.0.2 .
 
 docker login
 
-docker tag muffin-wallet:2.0.1 tyaminilya/muffin-wallet:2.0.1
+docker tag muffin-wallet:2.0.2 tyaminilya/muffin-wallet:2.0.2
 
-docker push tyaminilya/muffin-wallet:2.0.1
+docker push tyaminilya/muffin-wallet:2.0.2
 ```
 
 3. Поднял с помощью Helmfile muffin-wallet
@@ -118,22 +118,15 @@ muffin-currency.com
 
 10. Поставим Grafana Stack в k8s
 ```yaml
-helm repo add grafana https://grafana.github.io/helm-charts
-
-helm install loki grafana/loki-stack \
---namespace wallet-monitoring \
---create-namespace \
---set promtail.enabled=true \
---set grafana.enabled=true \
---set grafana.adminPassword=admin123 \
---set grafana.service.type=NodePort \
---set loki.persistence.enabled=false
-
-# находясь в корне проекта
-
-helm upgrade --install loki grafana/loki-stack \
+helm upgrade --install loki grafana/loki \
 -n wallet-monitoring \
--f promtail/values.yaml
+-f monitoring/values-loki.yaml
+
+helm upgrade --install grafana grafana/grafana \
+-n wallet-monitoring \
+-f monitoring/values-grafana.yaml
+
+
 ```
 Тут 2 команды у меня специально, чтобы promtail смог найти норм путь до loki и зарезолвить его. 
 
@@ -143,13 +136,12 @@ helm upgrade --install loki grafana/loki-stack \
 
 Легкий -- сделать port-forward:
 ```shell
-kubectl port-forward deployment/loki-grafana 3000 3000 -n wallet-monitoring
+kubectl port-forward deployment/grafana 3000 3000 -n wallet-monitoring
 ```
 
 Сложный -- сделать Ingress:
 ```shell
-cd monitoring
-kubectl apply -f grafana-ingress.yaml 
+kubectl apply -f monitoring/grafana-ingress.yaml 
 minikube tunnel
 ```
 В /etc/hosts надо будет добавить `192.168.49.2 grafana.local`

@@ -7,9 +7,55 @@ grafana:
 loki:
   persistence:
     enabled: false
+  image:
+    tag: 3.6.1
+  config:
+    auth_enabled: false
+
+    ingester:
+      lifecycler:
+        ring:
+          replication_factor: 1
+
+    schema_config:
+      configs:
+        - from: 2020-05-15
+          store: boltdb-shipper
+          object_store: filesystem
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+
+    storage_config:
+      boltdb_shipper:
+        active_index_directory: /var/loki/index
+        cache_location: /var/loki/cache
+
+      filesystem:
+        directory: /var/loki/chunks
+
+    table_manager:
+      retention_deletes_enabled: false
+
+    server:
+      http_listen_port: 3100
+
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+
+    compactor:
+      working_directory: /var/loki/boltdb-shipper-compactor
+      shared_store: filesystem
+      remote_write:
+        - url: http://localhost:4317
+
 
 promtail:
-  enabled: true
+  enabled: false
   config:
     clients:
       - url: http://loki.wallet-monitoring.svc.cluster.local:3100/loki/api/v1/push
