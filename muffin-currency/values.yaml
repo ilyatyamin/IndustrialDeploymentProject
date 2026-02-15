@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: tyaminilya/muffin-currency
-  tag: "1.2.0"
+  tag: "2.0.0"
   pullPolicy: Always
 
 service:
@@ -39,3 +39,7 @@ ingress:
 serviceAccount:
   create: true
   name: muffin-wallet
+
+env:
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: opentelemetry-collector.wallet-monitoring.svc.cluster.local:4317
