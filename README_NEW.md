@@ -11,25 +11,22 @@ minikube start --driver=docker
 minikube addons enable ingress
 ```
 
-2. Поднял БД в Docker Базу Данных (и по совместительству Prometheus).
+2. Поднял БД в k8s Базу Данных (почему-то в 2 часа ночи она умерла и host.minikube.internal перестал резолвиться)
 Важно! В /etc/hosts должен быть резолв muffin-wallet.com.
 
 ```yaml
+helm install postgres bitnami/postgresql \
+-n default \
+--set auth.username=postgres \
+--set auth.password=postgres \
+--set auth.database=postgres
+kubectl port-forward svc/postgres-postgresql 5432:5432
+
+
 docker-compose up -d
 ```
 
-3. Для того чтобы правильно работал трейсинг, нам нужно пересобрать muffin-currency и запушить в свой локальный Docker Hub. 
-
-(в самом muffin-currency вместо URL трейсинга стоит http://localhost:8080). Заменяем строку на
-```gotemplate
-err := initTracing("currency-service", "http://zipkin.wallet-monitoring.svc.cluster.local:9411/api/v2/spans")
-```
-
-Также там в коде на Go была какая-то проблема с трейсингом (все время создавались новые спаны). Я поправил и запушил в свой Docker Hub: `tyaminilya/muffin-currency:1.2.0`
-
-Почему такой адрес -- станет ясно позже (я разверну Zipkin в неймспейсе wallet-monitoring).
-
-Как собрать и запушить все в Docker Hub:
+3. Как собрать образы и запушить все в Docker Hub:
 ```shell
 docker build -t muffin-currency:2.0.2 .
 
@@ -40,7 +37,7 @@ docker tag muffin-currency:2.0.2 tyaminilya/muffin-currency:2.0.2
 docker push tyaminilya/muffin-currency:2.0.2
 ```
 
-Аналогично, мне требовалось пересобрать muffin-wallet (но потом оказалось, что это не надо, так как путь до Zipkin можно указать как переменная окружения)
+Аналогично, мне требовалось пересобрать muffin-wallet:
 ```shell
 docker build -t muffin-wallet:2.0.2 .
 
@@ -116,23 +113,16 @@ muffin-wallet.com
 muffin-currency.com
 ```
 
-10. Поставим Grafana Stack в k8s
+10. Поставим Grafana Stack в k8s: в этот раз я развертывал все локально, не через grafana-loki chart. 
 ```yaml
-helm upgrade --install loki grafana/loki \
--n wallet-monitoring \
--f monitoring/values-loki.yaml
+kubectl apply -f monitoring/loki.yaml -n wallet-monitoring
 
 helm upgrade --install grafana grafana/grafana \
 -n wallet-monitoring \
 -f monitoring/values-grafana.yaml
-
-
 ```
-Тут 2 команды у меня специально, чтобы promtail смог найти норм путь до loki и зарезолвить его. 
 
-А также там добавлен парсинг traceId, spanId и logLevel как лейблов в логах.
-
-Поднялась графана. Есть 2 пути как отобразить ее UI (легкий и простой):
+Поднялась графана и к ней еще Loki. Есть 2 пути как отобразить ее UI (легкий и простой):
 
 Легкий -- сделать port-forward:
 ```shell
@@ -149,9 +139,8 @@ minikube tunnel
 Вот она, графана (пароль admin123):
 ![](images/1.png)
 
-Loki будет автоматически подключен к Grafana. Также Loki будет автоматически скрэппить логи со всех подов k8s.
-
-Это можно посмотреть в разделе Explore:
+Необходимо будет добавить Loki в DataSource. URL: loki.wallet-monitoring.svc.cluster.local:3100
+Loki настроен! Логи можно посмотреть в разделе Explore:
 
 ![](images/3.png)
 
@@ -168,7 +157,19 @@ kubectl port-forward deployment/zipkin 9411 9411 -n wallet-monitoring
 
 В Grafana добавим Data Source (Zipkin) с URL = http://zipkin.wallet-monitoring.svc.cluster.local:9411
 
-11. Начнем разворачивать `Otel Collector`:
+11. В прошлом ДЗ я разворачивал prometheus в докере. В этом прийдется поправить ошбки и развернуть в k8s:
+```shell
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm upgrade --install prometheus prometheus-community/prometheus \
+  --namespace wallet-monitoring \
+  -f monitoring/values-prometheus.yaml
+
+
+kubectl port-forward deployment/prometheus-server 9090 9090 -n wallet-monitoring
+```
+
+12. Начнем разворачивать `Otel Collector`:
 ```shell
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 helm repo update
@@ -180,18 +181,9 @@ helm install opentelemetry-collector open-telemetry/opentelemetry-collector \
    -f otel/values.yaml
 
 
-# upgrade if changes
+# Если есть изменения: применить это (апргрейд)
 helm upgrade opentelemetry-collector open-telemetry/opentelemetry-collector \
   -n wallet-monitoring \
   -f otel/values.yaml
-  
- 
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm upgrade --install prometheus prometheus-community/prometheus \
-  --namespace wallet-monitoring \
-  -f monitoring/values-prometheus.yaml
 
-
-kubectl port-forward deployment/prometheus-server 9090 9090 -n wallet-monitoring
 ```

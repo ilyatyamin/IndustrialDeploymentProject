@@ -38,7 +38,7 @@ ingress:
 
 env:
   - name: SPRING_DATASOURCE_URL
-    value: "jdbc:postgresql://host.minikube.internal:5432/postgres"
+    value: "jdbc:postgresql://postgres-postgresql.default.svc.cluster.local:5432/postgres"
   - name: SPRING_DATASOURCE_USERNAME
     value: "postgres"
   - name: SPRING_DATASOURCE_PASSWORD
