@@ -11,44 +11,41 @@ minikube start --driver=docker
 minikube addons enable ingress
 ```
 
-2. Поднял БД в Docker Базу Данных (и по совместительству Prometheus).
+2. Поднял БД в k8s Базу Данных (почему-то в 2 часа ночи она умерла и host.minikube.internal перестал резолвиться)
 Важно! В /etc/hosts должен быть резолв muffin-wallet.com.
 
 ```yaml
+helm install postgres bitnami/postgresql \
+-n default \
+--set auth.username=postgres \
+--set auth.password=postgres \
+--set auth.database=postgres
+kubectl port-forward svc/postgres-postgresql 5432:5432
+
+
 docker-compose up -d
 ```
 
-3. Для того чтобы правильно работал трейсинг, нам нужно пересобрать muffin-currency и запушить в свой локальный Docker Hub. 
-
-(в самом muffin-currency вместо URL трейсинга стоит http://localhost:8080). Заменяем строку на
-```gotemplate
-err := initTracing("currency-service", "http://zipkin.wallet-monitoring.svc.cluster.local:9411/api/v2/spans")
-```
-
-Также там в коде на Go была какая-то проблема с трейсингом (все время создавались новые спаны). Я поправил и запушил в свой Docker Hub: `tyaminilya/muffin-currency:1.2.0`
-
-Почему такой адрес -- станет ясно позже (я разверну Zipkin в неймспейсе wallet-monitoring).
-
-Как собрать и запушить все в Docker Hub:
+3. Как собрать образы и запушить все в Docker Hub:
 ```shell
-docker build -t muffin-currency:1.1.1 .
+docker build -t muffin-currency:2.0.2 .
 
 docker login
 
-docker tag muffin-currency:1.1.1 tyaminilya/muffin-currency:1.1.1
+docker tag muffin-currency:2.0.2 tyaminilya/muffin-currency:2.0.2
 
-docker push tyaminilya/muffin-currency:1.1.1
+docker push tyaminilya/muffin-currency:2.0.2
 ```
 
-Аналогично, мне требовалось пересобрать muffin-wallet (но потом оказалось, что это не надо, так как путь до Zipkin можно указать как переменная окружения)
+Аналогично, мне требовалось пересобрать muffin-wallet:
 ```shell
-docker build -t muffin-wallet:1.1.1 .
+docker build -t muffin-wallet:2.0.2 .
 
 docker login
 
-docker tag muffin-wallet:1.1.1 tyaminilya/muffin-wallet:1.1.1
+docker tag muffin-wallet:2.0.2 tyaminilya/muffin-wallet:2.0.2
 
-docker push tyaminilya/muffin-wallet:1.1.1
+docker push tyaminilya/muffin-wallet:2.0.2
 ```
 
 3. Поднял с помощью Helmfile muffin-wallet
@@ -116,40 +113,25 @@ muffin-wallet.com
 muffin-currency.com
 ```
 
-10. Поставим Grafana Stack в k8s
+10. Поставим Grafana Stack в k8s: в этот раз я развертывал все локально, не через grafana-loki chart. 
 ```yaml
-helm repo add grafana https://grafana.github.io/helm-charts
+kubectl apply -f monitoring/loki.yaml -n wallet-monitoring
 
-helm install loki grafana/loki-stack \
---namespace wallet-monitoring \
---create-namespace \
---set promtail.enabled=true \
---set grafana.enabled=true \
---set grafana.adminPassword=admin123 \
---set grafana.service.type=NodePort \
---set loki.persistence.enabled=false
-
-# находясь в корне проекта
-
-helm upgrade --install loki grafana/loki-stack \
+helm upgrade --install grafana grafana/grafana \
 -n wallet-monitoring \
--f promtail/values.yaml
+-f monitoring/values-grafana.yaml
 ```
-Тут 2 команды у меня специально, чтобы promtail смог найти норм путь до loki и зарезолвить его. 
 
-А также там добавлен парсинг traceId, spanId и logLevel как лейблов в логах.
-
-Поднялась графана. Есть 2 пути как отобразить ее UI (легкий и простой):
+Поднялась графана и к ней еще Loki. Есть 2 пути как отобразить ее UI (легкий и простой):
 
 Легкий -- сделать port-forward:
 ```shell
-kubectl port-forward deployment/loki-grafana 3000 3000 -n wallet-monitoring
+kubectl port-forward deployment/grafana 3000 3000 -n wallet-monitoring
 ```
 
 Сложный -- сделать Ingress:
 ```shell
-cd monitoring
-kubectl apply -f grafana-ingress.yaml 
+kubectl apply -f monitoring/grafana-ingress.yaml 
 minikube tunnel
 ```
 В /etc/hosts надо будет добавить `192.168.49.2 grafana.local`
@@ -157,13 +139,12 @@ minikube tunnel
 Вот она, графана (пароль admin123):
 ![](images/1.png)
 
-Loki будет автоматически подключен к Grafana. Также Loki будет автоматически скрэппить логи со всех подов k8s.
-
-Это можно посмотреть в разделе Explore:
+Необходимо будет добавить Loki в DataSource. URL: loki.wallet-monitoring.svc.cluster.local:3100
+Loki настроен! Логи можно посмотреть в разделе Explore:
 
 ![](images/3.png)
 
-11. Поднимем zipkin в том же неймспейсе:
+11. Развернем Zipkin (как и в прошлом ДЗ):
 ```shell
 helm repo add zipkin https://zipkin.io/zipkin-helm
 helm install zipkin zipkin/zipkin --namespace wallet-monitoring
@@ -176,40 +157,35 @@ kubectl port-forward deployment/zipkin 9411 9411 -n wallet-monitoring
 
 В Grafana добавим Data Source (Zipkin) с URL = http://zipkin.wallet-monitoring.svc.cluster.local:9411
 
-12. Сделаем пару запросов на `muffin-wallet`, чтобы запросы доходили до `muffin-currency` (перевод денег). Посмотрим трейс в UI Zipkin:
-![](images/6.png)
-
-Ура! Все работает!
-
-Также запросам muffin-currency приписываются `trace_id` и `span_id`, а для muffin-wallet их скрэппит promtail по шаблону и добавляет как лэйблы к логу:
-![](images/7.png)
-
-13. Сделаем дашборд в Grafana. Не буду подробно объяснять как я его делал (использовал Variables в дашборде и инжектил их через $NameOfVariable)
-
-Дополнительно я прикрепил [JSON дашборда](dashboard.json) в корень репозитория. В дашборде можно выбрать по кнопке уровень логов и логи обоих контейнеров отфильтруются по уровню, а также указать traceId и справа отобразится информация о трейсе (и логи отфильтруются по трейсу).
-
-![](images/9.png)
-
-> Какой запрос для логов muffin-wallet?
-
-Из DataSource Loki:
-```promql
-{app="muffin-wallet", container="muffin-wallet", logLevel=~"$LogLevel", traceId=~"$TraceId"}
+11. В прошлом ДЗ я разворачивал prometheus в докере. В этом прийдется поправить ошбки и развернуть в k8s:
+```shell
+kubectl apply -f monitoring/prometheus.yaml -n wallet-monitoring
+kubectl port-forward deployment/prometheus 9090 9090 -n wallet-monitoring
 ```
 
-> Какой запрос для логов muffin-currency?
+12. Начнем разворачивать `Otel Collector`:
+```shell
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm repo update
 
-Из DataSource Loki:
-```promql
-{app="muffin-currency", container="muffin-currency", logLevel=~"$LogLevel", traceId=~"$TraceId"}
+helm install opentelemetry-collector open-telemetry/opentelemetry-collector \
+   --set image.repository="otel/opentelemetry-collector-k8s" \
+   --set mode=deployment \
+   -n wallet-monitoring \
+   -f otel/values.yaml
+   
+kubectl apply -f otel/otel-service.yaml
+kubectl apply -f otel/security-collector.yaml
+
+
+# Если есть изменения: применить это (апргрейд)
+helm upgrade opentelemetry-collector open-telemetry/opentelemetry-collector \
+  -n wallet-monitoring \
+  -f otel/values.yaml
+
 ```
 
-> Какой запрос для окна с трейсом
+13. Запихнем теперь метрики в графану:
+data source "prometheus.wallet-monitoring.svc.cluster.local"
 
-Из DataSource Zipkin:
-```promql
-$TraceId
-```
-
-Еще раз доказательство, что получилось сделать через лейблы :)
-![](images/10.png)
+построим дашборд как и на прошлом дз:

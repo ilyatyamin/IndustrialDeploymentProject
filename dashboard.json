@@ -25,11 +25,11 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "P8E80F9AEF21F6940"
+        "uid": "fbdd778d-21fa-4d99-bea5-832d74718e16"
       },
       "gridPos": {
-        "h": 8,
-        "w": 16,
+        "h": 17,
+        "w": 9,
         "x": 0,
         "y": 0
       },
@@ -51,7 +51,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "code",
-          "expr": "{app=\"muffin-wallet\", container=\"muffin-wallet\", logLevel=~\"$LogLevel\", traceId=~\"$TraceId\"}",
+          "expr": "{service_name=\"muffin-wallet\"}",
           "queryType": "range",
           "refId": "A"
         }
@@ -62,12 +62,12 @@
     {
       "datasource": {
         "type": "zipkin",
-        "uid": "c2353300-8744-44b3-997d-a2d2ef918fd4"
+        "uid": "a26e5401-4844-4bc3-b86a-e1dbd90662be"
       },
       "gridPos": {
         "h": 17,
         "w": 8,
-        "x": 16,
+        "x": 9,
         "y": 0
       },
       "id": 3,
@@ -75,7 +75,7 @@
         {
           "datasource": {
             "type": "zipkin",
-            "uid": "c2353300-8744-44b3-997d-a2d2ef918fd4"
+            "uid": "a26e5401-4844-4bc3-b86a-e1dbd90662be"
           },
           "query": "$TraceId",
           "queryType": "traceID",
@@ -87,44 +87,101 @@
     },
     {
       "datasource": {
-        "type": "loki",
-        "uid": "P8E80F9AEF21F6940"
+        "type": "prometheus",
+        "uid": "da4a219b-72ef-4fdd-8400-0c87750b6719"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
       },
       "gridPos": {
-        "h": 9,
-        "w": 16,
-        "x": 0,
-        "y": 8
+        "h": 14,
+        "w": 7,
+        "x": 17,
+        "y": 0
       },
-      "id": 2,
+      "id": 4,
       "options": {
-        "dedupStrategy": "none",
-        "enableLogDetails": true,
-        "prettifyLogMessage": true,
-        "showCommonLabels": false,
-        "showLabels": false,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": false
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "P8E80F9AEF21F6940"
+            "type": "prometheus",
+            "uid": "da4a219b-72ef-4fdd-8400-0c87750b6719"
           },
           "editorMode": "code",
-          "expr": "{app=\"muffin-currency\", container=\"muffin-currency\", logLevel=~\"$LogLevel\", traceId=~\"$TraceId\"}",
-          "queryType": "range",
+          "expr": "rate(http_requests_total{}[$__rate_interval])",
+          "legendFormat": "__auto",
+          "range": true,
           "refId": "A"
         }
       ],
-      "title": "Логи muffin-currency",
-      "type": "logs"
+      "title": "Panel Title",
+      "type": "timeseries"
     }
   ],
   "refresh": "",
-  "schemaVersion": 39,
+  "schemaVersion": 38,
+  "style": "dark",
   "tags": [],
   "templating": {
     "list": [
@@ -174,8 +231,8 @@
       {
         "current": {
           "selected": false,
-          "text": "69820b236c066e4801773b6c7f31488a",
-          "value": "69820b236c066e4801773b6c7f31488a"
+          "text": "95bebb67039660834f5f6d06acb4a77b",
+          "value": "95bebb67039660834f5f6d06acb4a77b"
         },
         "description": "если хотите отобразить все логи - поставьте .*",
         "hide": 0,
@@ -184,24 +241,24 @@
         "options": [
           {
             "selected": true,
-            "text": "69820b236c066e4801773b6c7f31488a",
-            "value": "69820b236c066e4801773b6c7f31488a"
+            "text": "95bebb67039660834f5f6d06acb4a77b",
+            "value": "95bebb67039660834f5f6d06acb4a77b"
           }
         ],
-        "query": "69820b236c066e4801773b6c7f31488a",
+        "query": "95bebb67039660834f5f6d06acb4a77b",
         "skipUrlSync": false,
         "type": "textbox"
       }
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Логи и трейсы",
   "uid": "f16a8d02-c8e0-44eb-ac7c-0d9685bd9b23",
-  "version": 8,
+  "version": 7,
   "weekStart": ""
 }

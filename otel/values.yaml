@@ -4,6 +4,9 @@ image:
 
 mode: deployment
 
+service:
+  type: ClusterIP
+
 config:
   receivers:
     otlp:
@@ -28,6 +31,12 @@ config:
             static_configs:
               - targets:
                   - "0.0.0.0:8888"
+          - job_name: "muffin-wallet"
+            scrape_interval: 3s
+            metrics_path: /actuator/prometheus
+            static_configs:
+              - targets: [ "muffin-wallet.default.svc.cluster.local:8081" ]
+
 
   processors:
     batch: { }
@@ -43,6 +52,8 @@ config:
     otlphttp:
       endpoint: "http://loki.wallet-monitoring.svc.cluster.local:3100/otlp"
     debug: { }
+    prometheus:
+      endpoint: "0.0.0.0:8890"
 
   extensions:
     health_check: { }
@@ -60,7 +71,7 @@ config:
       metrics:
         receivers: [otlp, prometheus]
         processors: [memory_limiter, batch]
-        exporters: [debug]
+        exporters: [prometheus, debug]
 
       traces:
         receivers: [otlp, jaeger]
